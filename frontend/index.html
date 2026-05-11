@@ -143,6 +143,12 @@
             </div>
 
         </div>
+    <div class="mt-6 bg-white rounded-xl shadow-md p-6">
+  <h2 class="text-xl font-bold text-gray-800 mb-4">📋 Historique des consultations</h2>
+  <div id="historique-section">
+    <p class="text-gray-400 text-sm text-center">Aucune consultation pour l'instant.</p>
+  </div>
+</div>    
     </main>
 
     <!-- Footer -->
@@ -152,6 +158,7 @@
 
     <!-- JavaScript -->
     <script>
+        const historique = [];
         // URL de l'API (a changer si l'API est ailleurs)
 const API_URL = "http://localhost:8000";
 
@@ -217,11 +224,17 @@ function afficherChargement() {
     `;
 }
 
+function getIcone(diagnostic) {
+  const icones = { paludisme: '🌡️', grippe: '❄️', typh: '⚠️', sain: '✅' };
+  return icones[diagnostic] || '🩺';
+}
+
+
 function afficherResultat(r) {
 
     // Codes couleur par diagnostic
     const couleurs = {
-        palu:   { bg: "bg-red-100",    text: "text-red-800",    bar: "bg-red-500",    badge: "bg-red-500"    },
+        paludisme:   { bg: "bg-red-100",    text: "text-red-800",    bar: "bg-red-500",    badge: "bg-red-500"    },
         grippe: { bg: "bg-orange-100", text: "text-orange-800", bar: "bg-orange-500", badge: "bg-orange-500" },
         typh:   { bg: "bg-yellow-100", text: "text-yellow-800", bar: "bg-yellow-500", badge: "bg-yellow-500" },
         sain:   { bg: "bg-green-100",  text: "text-green-800",  bar: "bg-green-500",  badge: "bg-green-500"  }
@@ -239,7 +252,7 @@ function afficherResultat(r) {
             <div class="${c.bg} rounded-lg p-4 mb-4">
                 <p class="text-sm text-gray-600">Diagnostic :</p>
                 <p class="text-2xl font-bold ${c.text} uppercase mt-1">
-                    ${r.diagnostic}
+                    ${getIcone(r.diagnostic)} ${r.diagnostic}
                 </p>
             </div>
 
@@ -269,6 +282,51 @@ function afficherResultat(r) {
             </div>
         </div>
     `;
+    // Ajouter à l'historique
+historique.unshift({
+  diagnostic: r.diagnostic,
+  probabilite: Math.round(r.probabilite * 100),
+  confiance: r.confiance
+});
+if (historique.length > 5) historique.pop();
+afficherHistorique();
+}
+
+function afficherHistorique() {
+  const section = document.getElementById('historique-section');
+  if (historique.length === 0) {
+    section.innerHTML = '<p class="text-gray-400 text-sm text-center">Aucune consultation.</p>';
+    return;
+  }
+  const couleurs = {
+    paludisme: 'text-red-700',
+    grippe:    'text-orange-700',
+    typh:      'text-yellow-700',
+    sain:      'text-green-700'
+  };
+  const rows = historique.map((h, i) => `
+    <tr class="border-b border-gray-100">
+      <td class="py-2 px-3 text-sm text-gray-500">#${i + 1}</td>
+      <td class="py-2 px-3 text-sm font-bold uppercase ${couleurs[h.diagnostic] || 'text-gray-700'}">
+        ${h.diagnostic}
+      </td>
+      <td class="py-2 px-3 text-sm text-gray-700">${h.probabilite}%</td>
+      <td class="py-2 px-3 text-sm text-gray-500">${h.confiance}</td>
+    </tr>
+  `).join('');
+  section.innerHTML = `
+    <table class="w-full">
+      <thead>
+        <tr class="text-left text-xs text-gray-400 uppercase border-b border-gray-200">
+          <th class="py-2 px-3">#</th>
+          <th class="py-2 px-3">Diagnostic</th>
+          <th class="py-2 px-3">Probabilité</th>
+          <th class="py-2 px-3">Confiance</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
 }
 
 function afficherErreur(msg) {
